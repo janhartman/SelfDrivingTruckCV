@@ -36,7 +36,7 @@ def process_img(original_image):
 
 def main():
     # last_time = time.time()
-    while (True):
+    while True:
         screen = np.array(ImageGrab.grab(bbox=(0, 40, 1280, 720)))
         new_screen = process_img(screen)
         # print('Loop took {} seconds'.format(time.time() - last_time))

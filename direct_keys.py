@@ -50,8 +50,7 @@ class Input(ctypes.Structure):
                 ("ii", Input_I)]
 
 
-# Actuals Functions
-
+# Actual Functions
 def press(key_code):
     extra = ctypes.c_ulong(0)
     ii_ = Input_I()
