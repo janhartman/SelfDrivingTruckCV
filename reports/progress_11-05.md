@@ -13,7 +13,8 @@ Dejavnosti:
 * Izrisovanje procesiranih slik z narisanimi robovi ceste
 * Testno pošiljanje signalov igri (uporabljen DirectKeys, ker samo pošiljanje pritiskov gumbov (PyAutoGUI) ne deluje)
 
-Trenutno stanje: Osnovno procesiranje slik in zaznavanje robov deluje (če teče v zanki in sproti izrisuje rezultat, dobimo okoli 10-15 FPS).
+Trenutno stanje: Za igro sem izbral Euro Truck Simulator 2. 
+Osnovno procesiranje slik in enostavno zaznavanje robov ceste deluje (če teče v zanki in sproti izrisuje rezultat, dobimo okoli 10-15 FPS).
 
 Naslednji koraki:  
 * izboljšanje zaznavanja robov (kakšen nasvet bi prišel prav)
