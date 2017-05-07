@@ -1,5 +1,6 @@
 """
 The main function. Invokes other libraries for image processing and direction finding.
+Current performance: 10-15 FPS per loop
 """
 
 import time
