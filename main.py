@@ -1,3 +1,7 @@
+"""
+The main function. Invokes other libraries for image processing and direction finding.
+"""
+
 import time
 import cv2 as cv
 

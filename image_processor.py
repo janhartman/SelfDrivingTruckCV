@@ -1,8 +1,10 @@
 import cv2 as cv
 import numpy as np
 
+"""
+The configuration for image processing.
+"""
 config = {
-    'bbox': (0, 0, 1280, 720),
     'roi_higher': np.array([[0, 720], [0, 400], [550, 300], [700, 300], [1280, 400], [1280, 720]], np.int32),
     'roi_lower': np.array([[0, 720], [0, 450], [550, 350], [700, 350], [1280, 450], [1280, 720]], np.int32),
     'roi': np.array([[0, 720], [0, 450], [550, 350], [700, 350], [1280, 450], [1280, 720]], np.int32),
@@ -15,25 +17,31 @@ config = {
 }
 
 
-# Process the current screenshot of the game and return the img_lines image.
 def process_image(img):
-    gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    """
+    Process the current screenshot of the game and return the processed image.
+    The current process is:
+     - find the edges using the Canny edge detector
+     - mask the image and retain only a specific region of interest
+     - blur the image with Gaussian blur
+     - use the Hough probabilistic transform to find lines in image
+     - find lanes
+     - draw the lanes on the image
 
-    # find edges
-    edges = cv.Canny(gray_img, config['canny_t1'], config['canny_t2'])
+    :param img: The current screenshot of the game to be processed
+    :return: the processed image with drawn lanes and the lanes
+    """
+
+    edges = cv.Canny(img, config['canny_t1'], config['canny_t2'])
 
     blurred_img = cv.GaussianBlur(edges, (3, 3), 0)
-
-    # use only region of interest
     masked_img = set_roi(blurred_img)
 
-    # find lines
     lines = hough_lines(masked_img)
 
     if lines is None:
         return edges, None
 
-    # find lanes
     lanes = find_lanes(lines)
 
     img_lines = draw_lines(masked_img.copy(), lanes)
@@ -41,16 +49,28 @@ def process_image(img):
     return img_lines, lanes
 
 
-# Mask the image to retain only a specified region of interest.
 def set_roi(img):
+    """
+    Mask the image, retain specified region of interest.
+
+    :param img: the image to be masked
+    :return: masked image
+    """
+
     mask = np.zeros_like(img)
     cv.fillConvexPoly(mask, config['roi'], (255, 255, 255))
     masked = cv.bitwise_and(img, mask)
     return masked
 
 
-# Fit lines to image.
 def hough_lines(edges):
+    """
+    Fit lines to the edges in the image.
+
+    :param edges: the result of Canny's edge detector (blurred)
+    :return: an array of lines found by Hough transform
+    """
+
     lines = cv.HoughLinesP(edges, 1, np.pi / 180, config['hough_threshold'],
                            config['hough_min_line_length'], config['hough_max_line_gap'])
     if lines is None:
@@ -59,10 +79,18 @@ def hough_lines(edges):
     return np.array(list(map(lambda x: x[0], lines)))
 
 
-# Find the lanes. There should only be two distinct lanes.
-# In case of failure, return an empty list
 # TODO potential problem: the lanes are found at the edges of the road and not the lane the vehicle is in
+# TODO improve algorithm - more robust estimation
 def find_lanes(lines):
+    """
+    Find the lanes of the road. Ideally, there should be two distinct lanes (edges of the road).
+    First, find the N longest lines and divide them into two bins depending on their slope.
+    The average slopes for each bin are the lanes.
+
+    :param lines: the lines found by Hough transform
+    :return: an array of lanes found in the image
+    """
+
     lanes = []
 
     # get lengths of all lines
@@ -73,7 +101,7 @@ def find_lanes(lines):
                              sorted(enumerate(line_lengths), key=lambda p: p[1])[::-1][:config['n_longest_lines']]])
 
     line_slopes = np.array(list(map(lambda l: (l[3] - l[1]) / (l[2] - l[0]), longest_lines)))
-    line_slopes = np.array(list(filter(lambda s: -1. < s < 1., line_slopes)))
+    line_slopes = np.array(list(filter(lambda s: -10 < s < 10, line_slopes)))
 
     # divide lines into two bins based on their slope
     pos, neg = [], []
@@ -88,8 +116,15 @@ def find_lanes(lines):
     return lanes
 
 
-# Draw lines on image.
 def draw_lines(img, lines):
+    """
+    Draw lines on the image.
+
+    :param img: the image
+    :param lines: the lines (provided as a tuple of point coordinates)
+    :return: the image with drawn lines
+    """
+
     for line in lines:
         x1, y1, x2, y2 = line
         cv.line(img, (x1, y1), (x2, y2), (255, 255, 255), 3)
