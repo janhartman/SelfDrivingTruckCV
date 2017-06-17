@@ -2,16 +2,15 @@
 
 import win32api as wapi
 
-key_list = ["A", "W", "S", "D", "P"]
+key_list = ['A', 'W', 'S', 'D', 'P']
 
 
-def key_check():
-    keys = set()
+def get_pressed_key():
+    """
+    Check for a pressed key.
+    :return: the first detected currently pressed key
+    """
     for key in key_list:
         if wapi.GetAsyncKeyState(ord(key)):
-            keys.add(key)
-    return list(keys)
-
-
-def map_keys(keys):
-    return ["W" in keys, "A" in keys, "S" in keys, "D" in keys]
+            return key
+    return None

@@ -8,17 +8,20 @@ import time
 import cv2 as cv
 import numpy as np
 
-from get_keys import key_check, map_keys
+from get_keys import get_pressed_key
 from screen_grabber import grab_screen
 from image_processor import process_image
 from direction_finder import DirectionFinder
 
 
 def main():
+
+    # use P to pause the program while still running the game
     paused = False
 
     # learning or driving
     learn = False
+    drive = False
 
     file_name = 'training_data.npy'
     if os.path.isfile(file_name):
@@ -29,47 +32,44 @@ def main():
         training_data = []
 
     # initialize the learner/classifier
-    if not learn:
+    if drive:
         finder = DirectionFinder(training_data)
 
+    # time each loop to measure performance
     loop_time = time.time()
 
     while True:
-        keys = key_check()
+        key = get_pressed_key()
 
-        if 'P' in keys:
+        if key == 'P':
             paused = not paused
             time.sleep(1)
             continue
 
         if not paused:
-            image = grab_screen((0, 0, 1280, 720))
+            image = grab_screen((0, 30, 1280, 720))
 
             processed_image, lanes = process_image(image)
 
             cv.imshow('Processed image', processed_image)
 
-            if lanes is None:
-                continue
-
             """
             if learning, append a new test case to training data
             X = lane data
-            Y = four binary values to indicate which keys were pressed at that time
+            Y = pressed key
 
             otherwise, determine which keys to press in direction_finder
             """
-            if learn:
-                keys = list(map(int, map_keys(keys)))
-                training_data.append([lanes, keys])
-                if len(training_data) % 500 == 0:
-                    print(len(training_data))
-                    np.save(file_name, training_data)
-            else:
+            if learn and key is not None:
+                training_data.append([lanes, key])
+                if len(training_data) % 100 == 0:
+                    print("Gathered", len(training_data), "data samples.")
+                    np.save(file_name, np.array(training_data))
+            elif drive:
                 finder.find_direction(lanes)
 
-        # print('Loop time: ', time.time() - loop_time)
-        # loop_time = time.time()
+        print('Loop time: ', time.time() - loop_time)
+        loop_time = time.time()
 
         if cv.waitKey(25) & 0xFF == ord('q'):
             cv.destroyAllWindows()

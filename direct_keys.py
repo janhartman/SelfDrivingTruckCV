@@ -43,7 +43,7 @@ class MouseInput(ctypes.Structure):
                 ("dwExtraInfo", PUL)]
 
 
-class Input_I(ctypes.Union):
+class InputI(ctypes.Union):
     _fields_ = [("ki", KeyBdInput),
                 ("mi", MouseInput),
                 ("hi", HardwareInput)]
@@ -51,13 +51,13 @@ class Input_I(ctypes.Union):
 
 class Input(ctypes.Structure):
     _fields_ = [("type", ctypes.c_ulong),
-                ("ii", Input_I)]
+                ("ii", InputI)]
 
 
 # Actual Functions
 def press(key_code):
     extra = ctypes.c_ulong(0)
-    ii_ = Input_I()
+    ii_ = InputI()
     ii_.ki = KeyBdInput(0, key_code, 0x0008, 0, ctypes.pointer(extra))
     x = Input(ctypes.c_ulong(1), ii_)
     ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
@@ -65,7 +65,7 @@ def press(key_code):
 
 def release(key_code):
     extra = ctypes.c_ulong(0)
-    ii_ = Input_I()
+    ii_ = InputI()
     ii_.ki = KeyBdInput(0, key_code, 0x0008 | 0x0002, 0, ctypes.pointer(extra))
     x = Input(ctypes.c_ulong(1), ii_)
     ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
