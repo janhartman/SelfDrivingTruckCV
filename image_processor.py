@@ -41,19 +41,19 @@ def process_image(img):
     lines = hough_lines(masked_img)
 
     if lines is None:
-        return edges, None
+        return masked_img, None
 
-    # lanes = find_longest_lines(lines)
+    lines = find_longest_lines(lines)
+
     lanes = average_slope_intercept(lines)
-
     lane_lines = [make_line_points(720, 420, lanes[0]), make_line_points(720, 420, lanes[1])]
 
-    if lane_lines[0] is None or lane_lines[1] is None:
-        return edges, None
+    if None in lane_lines:
+        return masked_img, None
 
-    img_lines = masked_img
-    img_lines = draw_lines(img_lines, find_longest_lines(lines), (200, 0, 200), 4)
-    #img_lines = draw_lines(set_roi(masked_img.copy(), config['roi']), lane_lines, color=(255, 255, 255), thickness=4)
+    img_lines = cv.cvtColor(masked_img, cv.COLOR_GRAY2BGR)
+    img_lines = draw_lines(img_lines, lines, color=(200, 0, 0), thickness=2)
+    img_lines = draw_lines(img_lines, lane_lines, color=(0, 0, 200), thickness=4)
 
     return img_lines, list(lanes[0]) + list(lanes[1])
 
@@ -168,12 +168,14 @@ def hough_lines(edges):
     return np.array(list(map(lambda x: x[0], lines)))
 
 
-def draw_lines(img, lines, color, thickness):
+def draw_lines(img, lines, color=(255, 255, 255), thickness=3):
     """
     Draw lines on the image.
 
     :param img: the image
-    :param lines: the lines (provided as a tuple of point coordinates)
+    :param lines: the lines (provided as a list of point coordinates)
+    :param color: the color of the lines (default white)
+    :param thickness: the thickness of the lines (default 3px)
     :return: the image with drawn lines
     """
 

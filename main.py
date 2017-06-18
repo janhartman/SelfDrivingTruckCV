@@ -20,15 +20,14 @@ def main():
     paused = False
 
     # learning or driving
-    learn = False
+    learn = True
     drive = False
 
     file_name = 'training_data.npy'
     if os.path.isfile(file_name):
-        print('File exists, loading previous data!')
         training_data = list(np.load(file_name))
+        print(training_data)
     else:
-        print('File does not exist, starting fresh!')
         training_data = []
 
     # initialize the learner/classifier
@@ -60,7 +59,7 @@ def main():
 
             otherwise, determine which keys to press in direction_finder
             """
-            if learn and key is not None:
+            if learn and None not in (key, lanes):
                 training_data.append([lanes, key])
                 if len(training_data) % 100 == 0:
                     print("Gathered", len(training_data), "data samples.")

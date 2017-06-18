@@ -6,16 +6,13 @@ from direct_keys import press, release, W, A, S, D
 
 delta = 0.1
 
-"""
-gas_threshold = 0.5
-turn_threshold = 0.5
-brake_threshold = 0.5
-"""
 
 def straight():
     press(W)
     release(A)
     release(D)
+    time.sleep(delta)
+    release(W)
 
 
 def left():
@@ -61,9 +58,10 @@ class DirectionFinder:
                 Y: pressed key
         """
 
-        self.clf = svm.SVC(decision_function_shape='ovo', cache_size=1000, probability=True)
+        self.clf = svm.SVC(decision_function_shape='ovo', cache_size=1000)
         arr = np.array(self.balance(training_data))
         self.clf.fit(np.float32(arr.T[0].tolist()), arr.T[1])
+        self.last = [None for _ in range(1)]
 
     def balance(self, training_data):
         """
@@ -90,9 +88,21 @@ class DirectionFinder:
         :param lanes: numpy array of lane data
         :return:
         """
+        if lanes is None:
+            """
+            if 'W' in self.last:
+                self.last = [None] + self.last[1:]
+            else:
+                self.last = ['W']
+                straight()
+            """
+            straight()
+            return
+
         lanes = np.float32(lanes).reshape(1, -1)
         cls = self.clf.predict(lanes)[0]
-
+        self.last = [cls]
+        print(cls)
         direction[cls]()
 
         """

@@ -1,8 +1,8 @@
 from image_processor import *
 
-img1 = cv.imread('screens/Screenshot_1.png', cv.CV_8UC1)
-img2 = cv.imread('screens/Screenshot_2.png', cv.CV_8UC1)
-img3 = cv.imread('screens/Screenshot_3.png', cv.CV_8UC1)
+img1 = cv.imread('screens/Screenshot_1.png')
+img2 = cv.imread('screens/Screenshot_2.png')
+img3 = cv.imread('screens/Screenshot_3.png')
 
 for img in [img1, img2, img3]:
     img_lines, lanes = process_image(img)
