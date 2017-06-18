@@ -8,8 +8,6 @@ import win32gui
 import win32ui
 import win32con
 import win32api
-
-import cv2 as cv
 import numpy as np
 
 
@@ -43,4 +41,4 @@ def grab_screen(region=None):
     win32gui.ReleaseDC(hwin, hwindc)
     win32gui.DeleteObject(bmp.GetHandle())
 
-    return cv.cvtColor(img, cv.COLOR_BGRA2RGB)
+    return img

@@ -1,20 +1,6 @@
 import cv2 as cv
 import numpy as np
-
-"""
-The configuration for image processing.
-"""
-config = {
-    'roi': np.int32([[50, 720], [50, 450], [550, 350], [730, 350], [1210, 450], [1210, 720]]),
-    'perspective_roi': np.float32([[0, 720], [600, 350], [680, 350], [1280, 720]]),
-    'canny_t1': 100,
-    'canny_t2': 250,
-    'blur_sigma': 3,
-    'hough_threshold': 10,
-    'hough_min_line_length': 50,
-    'hough_max_line_gap': 30,
-    'n_longest_lines': 10,
-}
+from config import config
 
 
 def process_image(img):

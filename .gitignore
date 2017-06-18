@@ -99,3 +99,8 @@ ENV/
 
 # IDE files
 .idea
+
+# numpy files
+*.npy
+
+reports

@@ -1,8 +1,11 @@
-# Citation: Box Of Hats (https://github.com/Box-Of-Hats )
+"""
+Checks which keys are pressed, then returns the first detected pressed key from a specific list of keys.
+"""
 
 import win32api as wapi
+from config import config
 
-key_list = ['A', 'W', 'S', 'D', 'P']
+key_list = config['keylist']
 
 
 def get_pressed_key():

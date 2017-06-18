@@ -8,6 +8,7 @@ import time
 import cv2 as cv
 import numpy as np
 
+from config import config
 from get_keys import get_pressed_key
 from screen_grabber import grab_screen
 from image_processor import process_image
@@ -20,13 +21,12 @@ def main():
     paused = False
 
     # learning or driving
-    learn = True
-    drive = False
+    learn = False
+    drive = True
 
-    file_name = 'training_data.npy'
+    file_name = config['filename']
     if os.path.isfile(file_name):
         training_data = list(np.load(file_name))
-        print(training_data)
     else:
         training_data = []
 
@@ -46,7 +46,7 @@ def main():
             continue
 
         if not paused:
-            image = grab_screen((0, 30, 1280, 720))
+            image = grab_screen(config['bbox'])
 
             processed_image, lanes = process_image(image)
 
@@ -61,13 +61,15 @@ def main():
             """
             if learn and None not in (key, lanes):
                 training_data.append([lanes, key])
+
                 if len(training_data) % 100 == 0:
                     print("Gathered", len(training_data), "data samples.")
                     np.save(file_name, np.array(training_data))
+
             elif drive:
                 finder.find_direction(lanes)
 
-        print('Loop time: ', time.time() - loop_time)
+        # print('Loop time: ', time.time() - loop_time)
         loop_time = time.time()
 
         if cv.waitKey(25) & 0xFF == ord('q'):

@@ -1,10 +1,12 @@
 import time
 import numpy as np
-from sklearn import svm
+from sklearn import tree
 from sklearn.utils import shuffle
 from direct_keys import press, release, W, A, S, D
 
-delta = 0.1
+from config import config
+
+delta = config['timedelta']
 
 
 def straight():
@@ -20,6 +22,7 @@ def left():
     press(A)
     release(D)
     time.sleep(delta)
+    release(W)
     release(A)
 
 
@@ -28,6 +31,7 @@ def right():
     press(D)
     release(A)
     time.sleep(delta)
+    release(W)
     release(D)
 
 
@@ -58,10 +62,14 @@ class DirectionFinder:
                 Y: pressed key
         """
 
-        self.clf = svm.SVC(decision_function_shape='ovo', cache_size=1000)
-        arr = np.array(self.balance(training_data))
-        self.clf.fit(np.float32(arr.T[0].tolist()), arr.T[1])
+        self.data = training_data
+        self.clf = tree.DecisionTreeClassifier()
+        self.data = self.balance(training_data)
+        self.data = np.array(shuffle(self.data))
+        self.clf.fit(np.float32(self.data.T[0].tolist()), self.data.T[1])
         self.last = [None for _ in range(1)]
+
+        # print(self.data)
 
     def balance(self, training_data):
         """
@@ -76,9 +84,12 @@ class DirectionFinder:
         s = list(filter(lambda x: x[1] == 'S', training_data))
         d = list(filter(lambda x: x[1] == 'D', training_data))
 
-        l = [w, a, d, ] #s
+        l = [w, a, d, ]  # s
 
-        min_c = min([len(x) for x in l])
+        counts = [len(x) for x in l]
+        min_c = min(counts)
+
+        print(counts)
 
         return w[:min_c] + a[:min_c] + s[:min_c] + d[:min_c]
 
@@ -96,6 +107,7 @@ class DirectionFinder:
                 self.last = ['W']
                 straight()
             """
+            print("w")
             straight()
             return
 
