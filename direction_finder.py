@@ -1,83 +1,43 @@
-import time
 import numpy as np
 from sklearn import tree
 from sklearn.utils import shuffle
-from direct_keys import press, release, W, A, S, D
 
 from config import config
-
-delta = config['timedelta']
-
-
-def straight():
-    press(W)
-    release(A)
-    release(D)
-    time.sleep(delta)
-    release(W)
-
-
-def left():
-    press(W)
-    press(A)
-    release(D)
-    time.sleep(delta)
-    release(W)
-    release(A)
-
-
-def right():
-    press(W)
-    press(D)
-    release(A)
-    time.sleep(delta)
-    release(W)
-    release(D)
-
-
-def brake():
-    press(S)
-    release(W)
-    release(A)
-    release(D)
-    time.sleep(delta)
-    release(S)
-
-
-direction = {
-    'A': left,
-    'W': straight,
-    'S': brake,
-    'D': right
-}
+from key_presser import go
 
 
 class DirectionFinder:
     def __init__(self, training_data):
         """
         Initialize the direction finder by training the model.
-        The model is a support vector machine.
+        The model is a decision tree
         :param training_data: Training data for the model.
                 X: lane data
                 Y: pressed key
         """
 
-        self.data = training_data
-        self.clf = tree.DecisionTreeClassifier()
+        # the training data
         self.data = self.balance(training_data)
         self.data = np.array(shuffle(self.data))
-        self.clf.fit(np.float32(self.data.T[0].tolist()), self.data.T[1])
-        self.last = [None for _ in range(1)]
 
-        # print(self.data)
+        # last N commands
+        self.last = [None for _ in range(config['n_last'])]
+
+        # the classifier (a decision tree using Gini impurity)
+        self.clf = tree.DecisionTreeClassifier(min_samples_split=4, min_samples_leaf=1)
+        self.clf.fit(np.float32(self.data.T[0].tolist()), self.data.T[1])
 
     def balance(self, training_data):
         """
-        Balance the training data.
-        :param training_data:
+        Balance the training data to have an equal distribution of classes.
+        :param training_data: array [X | Y] where X are cases and Y classes
         :return: balanced data
         """
         training_data = shuffle(training_data)
+
+        training_data = np.array(list(filter(lambda x: self.check_lanes(x[0]), training_data)))
+
+        print(training_data)
 
         w = list(filter(lambda x: x[1] == 'W', training_data))
         a = list(filter(lambda x: x[1] == 'A', training_data))
@@ -89,54 +49,68 @@ class DirectionFinder:
         counts = [len(x) for x in l]
         min_c = min(counts)
 
-        print(counts)
-
         return w[:min_c] + a[:min_c] + s[:min_c] + d[:min_c]
 
     def find_direction(self, lanes):
         """
         Predict which direction to take (i.e. which key to press).
         :param lanes: numpy array of lane data
-        :return:
         """
-        if lanes is None:
-            """
-            if 'W' in self.last:
-                self.last = [None] + self.last[1:]
-            else:
-                self.last = ['W']
-                straight()
-            """
-            print("w")
-            straight()
+
+        # Brake every n-th turn.
+        if 'S' not in self.last:
+            print("s", self.last)
+            self.last = ['S'] + self.last[:-1]
+            go('S')
             return
+
+        # Check the lanes for validity (if invalid, apply gas).
+        if not self.check_lanes(lanes):
+            print("w")
+            self.last = ['W'] + self.last[:-1]
+            go('W')
+
+        # Use the classifier to determine direction.
+        else:
+            self.find_with_clf(lanes)
+
+    def check_lanes(self, lanes):
+        """
+        Checks if the lanes are valid.
+        The slope/intercept must fall within specified intervals and both lanes must exist. TODO change for both?
+        :param lanes: the found lanes
+        :return: the validity of the lanes.
+        """
+        return not (lanes is None or lanes[1] > 1500 or lanes[1] < 0 or lanes[3] < -150)
+
+    def find_with_clf(self, lanes):
 
         lanes = np.float32(lanes).reshape(1, -1)
         cls = self.clf.predict(lanes)[0]
-        self.last = [cls]
         print(cls)
-        direction[cls]()
+        self.last = [cls] + self.last[:-1]
+        go(cls)
 
         """
+        # Use probabilities
         probs = self.clf.predict_proba(lanes)[0]
 
-        idx = np.argmin(probs)
+        idx = np.argmax(probs)
         if self.clf.classes_[idx] != cls:
-            print("Found a different minimum than the predicted class")
-        probs = np.ones(probs.shape) - probs
+            print("Found a different max than the predicted class")
+
         print(probs, cls)
 
         # presuming the keys are sorted A D S W
-        if probs[3] > gas_threshold:
+        if probs[3] > config['gas_threshold']:
             straight()
-        elif probs[0] > turn_threshold:
+        elif probs[0] > config['turn_threshold']:
             left()
-        elif probs[1] > turn_threshold:
+        elif probs[1] > config['turn_threshold']:
             right()
-        elif probs[2] > brake_threshold:
+        elif probs[2] > config['brake_threshold']:
             brake()
         # maybe remove?
         else:
             straight()
         """
-
