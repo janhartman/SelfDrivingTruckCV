@@ -1,6 +1,7 @@
 """
 An optimized way to grab a section of the screen.
 Compared to PIL's ImageGrab function, it is approximately 2 times faster, resulting in better performance (more FPS).
+Taken from https://github.com/Sentdex/pygta5
 """
 
 

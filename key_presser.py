@@ -1,5 +1,5 @@
 """
-Used to issue directions by pressing keys.
+Send keypresses to the game based on the command (class) to simulate driving.
 """
 
 import time
@@ -45,12 +45,17 @@ def brake():
     release(S)
 
 directions = {
-    'A': left,
     'W': straight,
+    'A': left,
     'S': brake,
     'D': right
 }
 
 
-def go(cls):
-    directions[cls]()
+def go(cmd):
+    """
+    Used to choose a direction based on the received command.
+
+    :param cmd: The command (can be any of W, A, S, D)
+    """
+    directions[cmd]()

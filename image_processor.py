@@ -1,3 +1,7 @@
+"""
+The image processing library.
+"""
+
 import cv2 as cv
 import numpy as np
 from config import config
@@ -6,23 +10,26 @@ from config import config
 def process_image(img):
     """
     Process the current screenshot of the game and return the processed image.
-    The current process is:
+    The process:
+     - isolate the lane markings using morphological operations
      - find the edges using the Canny edge detector
-     - mask the image and retain only a specific region of interest
      - blur the image with Gaussian blur
+     - mask the image and retain only a specific region of interest
      - use the Hough probabilistic transform to find lines in image
-     - find lanes
-     - draw the lanes on the image
+     - keep only N longest lines
+     - get the two lanes by averaging the lines
+     - draw the lanes and lines on the image
 
-    :param img: The current screenshot of the game to be processed
-    :return: the processed image with drawn lanes and the lanes
+    :param img: The current screenshot of the game to be processed (image)
+    :return: the processed image with drawn lane, the lanes (array of length 4)
     """
+
     i_img = isolate_lane_markings(img)
 
     edges = cv.Canny(i_img, config['canny_t1'], config['canny_t2'])
 
     blurred_img = cv.GaussianBlur(edges, (config['blur_sigma'], config['blur_sigma']), 0)
-    masked_img = set_roi(blurred_img, config['roi'])
+    masked_img = set_roi(blurred_img, np.int32(config['roi']))
 
     lines = hough_lines(masked_img)
 
@@ -31,7 +38,7 @@ def process_image(img):
 
     lines = find_longest_lines(lines)
 
-    lanes = average_slope_intercept(lines)
+    lanes = find_lanes(lines)
     lane_lines = [make_line_points(720, 420, lanes[0]), make_line_points(720, 420, lanes[1])]
 
     if None in lane_lines:
@@ -50,6 +57,7 @@ def isolate_lane_markings(img):
     :param img: the image
     :return: the image with lane markings
     """
+
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     kernel = np.ones((5, 5), np.uint8)
     opening = cv.morphologyEx(gray, cv.MORPH_OPEN, kernel=kernel)
@@ -62,7 +70,7 @@ def find_longest_lines(lines):
     """
     Find the N longest lines.
     :param lines: the lines found by Hough transform
-    :return: an array of longest lines
+    :return: an array of length N, containing the N longest lines
     """
 
     # get lengths of all lines
@@ -75,19 +83,33 @@ def find_longest_lines(lines):
     return longest_lines
 
 
-def average_slope_intercept(lines):
-    left_lines = []  # (slope, intercept)
-    left_weights = []  # (length,)
-    right_lines = []  # (slope, intercept)
-    right_weights = []  # (length,)
+def find_lanes(lines):
+    """
+    Determines two lanes from a set of lines.
+    Separate the lines into two sets based on their slope, then use a weighted average of slopes / intercepts
+    (the weights are line lengths) to determine lanes. If a lane cannot be found, return None in its place.
+    Taken from https://github.com/naokishibuya/car-finding-lane-lines
+
+    :param lines: The array of lines, each line is represented with four coordinates.
+    :return: the left and right lane, each is represented with slope and intercept.
+    """
+
+    left_lines = []
+    left_weights = []
+    right_lines = []
+    right_weights = []
 
     for line in lines:
         x1, y1, x2, y2 = line
+
+        # ignore a vertical line
         if x2 == x1:
-            continue  # ignore a vertical line
+            continue
+
         slope = (y2 - y1) / (x2 - x1)
         intercept = y1 - slope * x1
         length = np.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
+
         if slope < 0:  # y is reversed in image
             left_lines.append((slope, intercept))
             left_weights.append(length)
@@ -104,14 +126,20 @@ def average_slope_intercept(lines):
 
 def make_line_points(y1, y2, line):
     """
-    Convert a line represented in slope and intercept into pixel points
+    Convert a line represented in slope and intercept into pixel points.
+    Taken from https://github.com/naokishibuya/car-finding-lane-lines
+
+    :param y1: first y coordinate of the line
+    :param y2: second y coordinate of the line
+    :param line: the slope and intercept of the line
+    :return: an array of four coordinates [x1, y1, x2, y2]
     """
+
     if line is None:
         return None
 
     slope, intercept = line
 
-    # make sure everything is integer as cv2.line requires it
     try:
         x1 = int((y1 - intercept) / slope)
         x2 = int((y2 - intercept) / slope)
@@ -134,13 +162,12 @@ def set_roi(img, roi):
 
     mask = np.zeros_like(img)
     cv.fillConvexPoly(mask, roi, (255, 255, 255))
-    masked = cv.bitwise_and(img, mask)
-    return masked
+    return cv.bitwise_and(img, mask)
 
 
 def hough_lines(edges):
     """
-    Fit lines to the edges in the image.
+    Fit lines to the edges in the image using the Hough probabilistic transform.
 
     :param edges: the result of Canny's edge detector (blurred)
     :return: an array of lines found by Hough transform
@@ -159,7 +186,7 @@ def draw_lines(img, lines, color=(255, 255, 255), thickness=3):
     Draw lines on the image.
 
     :param img: the image
-    :param lines: the lines (provided as a list of point coordinates)
+    :param lines: the lines (each is an array of point coordinates)
     :param color: the color of the lines (default white)
     :param thickness: the thickness of the lines (default 3px)
     :return: the image with drawn lines

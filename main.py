@@ -1,6 +1,11 @@
 """
 The main function. Invokes other libraries for image processing and direction finding.
-Current performance: 10-15 FPS while learning, 5-10 FPS while driving
+Current performance: 10-15 FPS while learning, 5-10 FPS while driving.
+
+The program can be used in either learning or driving mode (it is possible to disable both to observe the processing).
+The configuration is found in config.py
+
+Inspired by: https://github.com/Sentdex/pygta5
 """
 
 import os
@@ -24,7 +29,7 @@ def main():
     # visualize frames
     visualize = True
 
-    # learning or driving
+    # learning mode / driving mode (or none of those)
     learn = False
     drive = True
 
@@ -84,7 +89,6 @@ def main():
             print()
             print('Mean loop time:', mean_loop_time)
             print('FPS:', 1 / mean_loop_time)
-
             break
 
 
