@@ -11,6 +11,7 @@ def process_image(img):
     """
     Process the current screenshot of the game and return the processed image.
     The process:
+     - equalize the histogram to normalize the image
      - isolate the lane markings using morphological operations
      - find the edges using the Canny edge detector
      - blur the image with Gaussian blur
@@ -23,8 +24,9 @@ def process_image(img):
     :param img: The current screenshot of the game to be processed (image)
     :return: the processed image with drawn lane, the lanes (array of length 4)
     """
+    equ_img = equalize_hist(img)
 
-    i_img = isolate_lane_markings(img)
+    i_img = isolate_lane_markings(equ_img)
 
     edges = cv.Canny(i_img, config['canny_t1'], config['canny_t2'])
 
@@ -51,6 +53,18 @@ def process_image(img):
     return img_lines, list(lanes[0]) + list(lanes[1])
 
 
+def equalize_hist(img):
+    """
+    Normalize the image histogram to improve contrast and improve detection in low-light environments
+    :param img: the image
+    :return: the normalized image
+    """
+
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    equ = cv.equalizeHist(gray)
+    return gray
+
+
 def isolate_lane_markings(img):
     """
     Isolate the lane markings with morphological operations.
@@ -58,9 +72,8 @@ def isolate_lane_markings(img):
     :return: the image with lane markings
     """
 
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     kernel = np.ones((5, 5), np.uint8)
-    opening = cv.morphologyEx(gray, cv.MORPH_OPEN, kernel=kernel)
+    opening = cv.morphologyEx(img, cv.MORPH_OPEN, kernel=kernel)
     dilation = cv.dilate(opening, kernel=kernel, iterations=1)
 
     return dilation

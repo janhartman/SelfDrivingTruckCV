@@ -66,7 +66,7 @@ class DirectionFinder:
             go('W')
 
         # Brake every n-th turn.
-        elif 'S' not in self.last and 'W' in self.last:
+        elif 'S' not in self.last:
             print('S')
             self.last = ['S'] + self.last[:-1]
             go('S')
