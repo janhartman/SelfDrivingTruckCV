@@ -16,7 +16,7 @@ class DirectionFinder:
                 Y: pressed key
         """
 
-        self.cmds = 0
+        self.num_cmds = 0
 
         # the training data - balance and shuffle
         self.data = self.balance(training_data)
@@ -26,7 +26,7 @@ class DirectionFinder:
         self.last = [None for _ in range(config['n_last_commands'])]
 
         # the classifier (a decision tree using Gini impurity)
-        self.clf = tree.DecisionTreeClassifier(min_samples_split=3, min_samples_leaf=1, max_depth=5)
+        self.clf = tree.DecisionTreeClassifier(min_samples_split=3, min_samples_leaf=1, max_depth=15)
         self.clf.fit(np.float32(self.data.T[0].tolist()), self.data.T[1])
 
     def balance(self, training_data):
@@ -58,10 +58,10 @@ class DirectionFinder:
         :param lanes: the lanes
         """
 
-        self.cmds += 1
+        self.num_cmds += 1
 
-        # start with applying gas
-        if self.cmds < 10:
+        # Start with applying gas.
+        if self.num_cmds < 15:
             self.last = ['W'] + self.last[:-1]
             go('W')
 
@@ -87,7 +87,7 @@ class DirectionFinder:
         Checks if the lanes are valid.
         The slope/intercept must fall within specified intervals and both lanes must exist.
         :param lanes: the lanes
-        :return: the validity of the lanes
+        :return: the validity of the lanes (boolean)
         """
 
         return not (lanes is None or lanes[1] > 1500 or lanes[1] < 0 or lanes[3] < -150)
@@ -95,8 +95,7 @@ class DirectionFinder:
     def find_with_clf(self, lanes):
         """
         Find the right direction using the classifier.
-        :param lanes:
-        :return:
+        :param lanes: the lanes
         """
 
         lanes = np.array(lanes).reshape(1, -1)

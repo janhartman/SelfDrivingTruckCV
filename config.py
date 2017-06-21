@@ -15,7 +15,7 @@ config = {
     # window size, general pipeline
     'height': 720,
     'width': 1280,
-    'bbox': (0, 30, 1280, 720),
+    'bbox': (0, 30, 1280, 750),
     'filename': 'training_data.npy',
     'keylist': ['A', 'W', 'S', 'D', 'P'],
 

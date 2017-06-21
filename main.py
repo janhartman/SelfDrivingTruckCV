@@ -15,6 +15,7 @@ import cv2 as cv
 import numpy as np
 
 from config import config
+import video_writer as vw
 from direction_finder import DirectionFinder
 from get_keys import get_pressed_key
 from image_processor import process_image
@@ -31,7 +32,10 @@ def main():
 
     # learning mode / driving mode (or none of those)
     learn = False
-    drive = True
+    drive = False
+
+    # produce video of captured screens with drawn lanes
+    video = False
 
     # load training data (learning: append new data, driving: fit model)
     file_name = config['filename']
@@ -55,10 +59,13 @@ def main():
         if not paused:
             image = grab_screen(config['bbox'])
 
-            processed_image, lanes = process_image(image)
+            processed_image, lanes, lanes_orig_image = process_image(image)
 
             if visualize:
                 cv.imshow('Processed image', processed_image)
+
+            if video:
+                vw.imgs.append(lanes_orig_image)
 
             """
             if learning, append a new test case to training data
@@ -89,6 +96,10 @@ def main():
             print()
             print('Mean loop time:', mean_loop_time)
             print('FPS:', 1 / mean_loop_time)
+
+            if video:
+                print(len(vw.imgs), 'frames taken')
+                vw.create_video()
             break
 
 

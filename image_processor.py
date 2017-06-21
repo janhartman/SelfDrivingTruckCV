@@ -36,7 +36,7 @@ def process_image(img):
     lines = hough_lines(masked_img)
 
     if lines is None:
-        return masked_img, None
+        return masked_img, None, img
 
     lines = find_longest_lines(lines)
 
@@ -44,13 +44,15 @@ def process_image(img):
     lane_lines = [make_line_points(720, 420, lanes[0]), make_line_points(720, 420, lanes[1])]
 
     if None in lane_lines:
-        return masked_img, None
+        return masked_img, None, img
 
     img_lines = cv.cvtColor(masked_img, cv.COLOR_GRAY2BGR)
     img_lines = draw_lines(img_lines, lines, color=(200, 0, 0), thickness=2)
     img_lines = draw_lines(img_lines, lane_lines, color=(0, 0, 200), thickness=4)
 
-    return img_lines, list(lanes[0]) + list(lanes[1])
+    orig_img_lanes = draw_lines(img, lane_lines, color=(0, 0, 200), thickness=4)
+
+    return img_lines, list(lanes[0]) + list(lanes[1]), orig_img_lanes
 
 
 def equalize_hist(img):
@@ -62,7 +64,7 @@ def equalize_hist(img):
 
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     equ = cv.equalizeHist(gray)
-    return gray
+    return equ
 
 
 def isolate_lane_markings(img):
