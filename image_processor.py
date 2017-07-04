@@ -40,11 +40,10 @@ def process_image(img):
 
     lines = find_longest_lines(lines)
 
+    lines = filter_lines(lines)
+
     lanes = find_lanes(lines)
     lane_lines = [make_line_points(720, 420, lanes[0]), make_line_points(720, 420, lanes[1])]
-
-    if None in lane_lines:
-        return masked_img, None, img
 
     img_lines = cv.cvtColor(masked_img, cv.COLOR_GRAY2BGR)
     img_lines = draw_lines(img_lines, lines, color=(200, 0, 0), thickness=2)
@@ -52,7 +51,10 @@ def process_image(img):
 
     orig_img_lanes = draw_lines(img, lane_lines, color=(0, 0, 200), thickness=4)
 
-    return img_lines, list(lanes[0]) + list(lanes[1]), orig_img_lanes
+    ret_lanes = (list(lanes[0]) if lanes[0] is not None else [-666, -666]) + \
+                (list(lanes[1]) if lanes[1] is not None else [666, 666])
+
+    return img_lines, ret_lanes, orig_img_lanes
 
 
 def equalize_hist(img):
@@ -64,7 +66,7 @@ def equalize_hist(img):
 
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     equ = cv.equalizeHist(gray)
-    return equ
+    return gray
 
 
 def isolate_lane_markings(img):
@@ -98,6 +100,17 @@ def find_longest_lines(lines):
     return longest_lines
 
 
+def filter_lines(lines):
+    d = 100
+    b = (550, 750)
+
+    def f(line):
+        x1, y1, x2, y2 = line
+        return not(abs(x1 - x2) < d and b[0] < x1 < b[1] and b[0] < x2 < b[1])
+
+    return np.array(list(filter(f, lines)))
+
+
 def find_lanes(lines):
     """
     Determines two lanes from a set of lines.
@@ -124,6 +137,8 @@ def find_lanes(lines):
         slope = (y2 - y1) / (x2 - x1)
         intercept = y1 - slope * x1
         length = np.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
+
+        # if 0.0
 
         if slope < 0:  # y is reversed in image
             left_lines.append((slope, intercept))
@@ -208,6 +223,8 @@ def draw_lines(img, lines, color=(255, 255, 255), thickness=3):
     """
 
     for line in lines:
+        if line is None:
+            continue
         x1, y1, x2, y2 = line
         cv.line(img, (x1, y1), (x2, y2), color, thickness)
 

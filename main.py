@@ -32,7 +32,7 @@ def main():
 
     # learning mode / driving mode (or none of those)
     learn = False
-    drive = False
+    drive = True
 
     # produce video of captured screens with drawn lanes
     video = False

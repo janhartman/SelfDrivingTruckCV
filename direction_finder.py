@@ -16,6 +16,9 @@ class DirectionFinder:
                 Y: pressed key
         """
 
+        if len(training_data) == 0:
+            return
+
         self.num_cmds = 0
 
         # the training data - balance and shuffle
@@ -26,7 +29,7 @@ class DirectionFinder:
         self.last = [None for _ in range(config['n_last_commands'])]
 
         # the classifier (a decision tree using Gini impurity)
-        self.clf = tree.DecisionTreeClassifier(min_samples_split=3, min_samples_leaf=1, max_depth=15)
+        self.clf = tree.DecisionTreeClassifier(min_samples_split=3, min_samples_leaf=1)
         self.clf.fit(np.float32(self.data.T[0].tolist()), self.data.T[1])
 
     def balance(self, training_data):
@@ -62,24 +65,38 @@ class DirectionFinder:
 
         # Start with applying gas.
         if self.num_cmds < 15:
-            self.last = ['W'] + self.last[:-1]
-            go('W')
+            self.take_direction('W')
 
         # Brake every n-th turn.
         elif 'S' not in self.last:
-            print('S')
-            self.last = ['S'] + self.last[:-1]
-            go('S')
+            if self.num_cmds > 30:
+                self.take_direction('S', 2)
+            else:
+                self.take_direction('S')
 
         # Check the lanes for validity (if invalid, the default choice is to apply gas).
         elif not self.check_lanes(lanes):
-            print('w')
-            self.last = ['W'] + self.last[:-1]
-            go('W')
+            self.take_direction('W')
+            """
+        # Left lane not found.
+        elif lanes[0] == -666 and lanes[1] == -666:
+            print('left not found ', end='')
+            self.take_direction('D')
 
+        # Right lane not found.
+        elif lanes[2] == 666 and lanes[3] == 666:
+            print('right not found ', end='')
+            self.take_direction('A')
+"""
         # Use the classifier to determine direction.
         else:
+            print(lanes)
             self.find_with_clf(lanes)
+
+    def take_direction(self, direction, factor=1):
+        print(direction)
+        self.last = [direction] + self.last[:-1]
+        go(direction, factor)
 
     @staticmethod
     def check_lanes(lanes):
@@ -89,8 +106,8 @@ class DirectionFinder:
         :param lanes: the lanes
         :return: the validity of the lanes (boolean)
         """
-
-        return not (lanes is None or lanes[1] > 1500 or lanes[1] < 0 or lanes[3] < -150)
+        # return not (lanes is None or lanes[1] > 1500 or lanes[1] < 0 or lanes[3] < -150)
+        return lanes is not None and lanes is not [-666, -666, 666, 666]
 
     def find_with_clf(self, lanes):
         """
@@ -100,6 +117,4 @@ class DirectionFinder:
 
         lanes = np.array(lanes).reshape(1, -1)
         cls = self.clf.predict(lanes)[0]
-        print(cls)
-        self.last = [cls] + self.last[:-1]
-        go(cls)
+        self.take_direction(cls)

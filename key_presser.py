@@ -7,10 +7,10 @@ from direct_keys import press, release, W, A, S, D
 
 from config import config
 
-delta = config['timedelta']
+default_delta = config['timedelta']
 
 
-def straight():
+def straight(delta):
     press(W)
     release(A)
     release(D)
@@ -18,7 +18,7 @@ def straight():
     release(W)
 
 
-def left():
+def left(delta):
     press(W)
     press(A)
     release(D)
@@ -27,7 +27,7 @@ def left():
     release(A)
 
 
-def right():
+def right(delta):
     press(W)
     press(D)
     release(A)
@@ -36,7 +36,7 @@ def right():
     release(D)
 
 
-def brake():
+def brake(delta):
     press(S)
     release(W)
     release(A)
@@ -52,10 +52,11 @@ directions = {
 }
 
 
-def go(cmd):
+def go(cmd, factor=1):
     """
     Used to choose a direction based on the received command.
 
     :param cmd: The command (can be any of W, A, S, D)
+    :param factor: how long to hold key
     """
-    directions[cmd]()
+    directions[cmd](factor * default_delta)
