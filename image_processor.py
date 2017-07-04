@@ -40,7 +40,7 @@ def process_image(img):
 
     lines = find_longest_lines(lines)
 
-    lines = filter_lines(lines)
+    # lines = filter_lines(lines)
 
     lanes = find_lanes(lines)
     lane_lines = [make_line_points(720, 420, lanes[0]), make_line_points(720, 420, lanes[1])]

@@ -20,7 +20,7 @@ config = {
     'keylist': ['A', 'W', 'S', 'D', 'P'],
 
     # direction finding
-    'n_last_commands': 3,
+    'n_last_commands': 4,
     'timedelta': 0.1,
 
 
