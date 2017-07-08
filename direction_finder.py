@@ -84,8 +84,6 @@ class DirectionFinder:
 
         # Left lane not found.
         elif lanes[0] == -666 and lanes[1] == -666:
-            print('left not found ', end='')
-
             if self.off_left or lanes[2] > 1 or lanes[3] < -1000:
                 self.take_direction('D')
                 self.off_left = True
@@ -95,8 +93,6 @@ class DirectionFinder:
 
         # Right lane not found.
         elif lanes[2] == 666 and lanes[3] == 666:
-            print('right not found ', end='')
-
             if self.off_right or lanes[0] < -1 or lanes[1] > 1000:
                 self.take_direction('A')
                 self.off_right = True
@@ -139,7 +135,6 @@ class DirectionFinder:
         """
 
         self.off_left = self.off_right = False
-        print(lanes)
         lanes = np.array(lanes).reshape(1, -1)
         cls = self.clf.predict(lanes)[0]
         self.take_direction(cls)

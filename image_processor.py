@@ -40,8 +40,6 @@ def process_image(img):
 
     lines = find_longest_lines(lines)
 
-    # lines = filter_lines(lines)
-
     lanes = find_lanes(lines)
     lane_lines = [make_line_points(720, 420, lanes[0]), make_line_points(720, 420, lanes[1])]
 
@@ -66,7 +64,7 @@ def equalize_hist(img):
 
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     equ = cv.equalizeHist(gray)
-    return gray
+    return equ
 
 
 def isolate_lane_markings(img):
@@ -98,17 +96,6 @@ def find_longest_lines(lines):
                              sorted(enumerate(line_lengths), key=lambda p: p[1])[::-1][:config['n_longest_lines']]])
 
     return longest_lines
-
-
-def filter_lines(lines):
-    d = 100
-    b = (550, 750)
-
-    def f(line):
-        x1, y1, x2, y2 = line
-        return not(abs(x1 - x2) < d and b[0] < x1 < b[1] and b[0] < x2 < b[1])
-
-    return np.array(list(filter(f, lines)))
 
 
 def find_lanes(lines):
